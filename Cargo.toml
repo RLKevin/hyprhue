@@ -1,0 +1,33 @@
+[package]
+name = "hyperhue"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Async runtime - allows doing multiple things at once (like waiting for network)
+tokio = { version = "1.32", features = ["full"] }
+
+# HTTP Client for Hue API
+reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+
+# JSON handling (Hue API uses JSON)
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling helper
+anyhow = "1.0"
+
+# Wayland Client & Protocols
+wayland-client = "0.31"
+wayland-protocols-wlr = { version = "0.2", features = ["client"] }
+
+# Shared Memory handling
+nix = { version = "0.27", features = ["mman", "fs"] }
+memmap2 = "0.9"
+
+# Image processing
+image = "0.24"
+
+# DTLS for Hue Entertainment API
+dtls = "0.13"
+hex = "0.4"
