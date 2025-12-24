@@ -179,7 +179,7 @@ pub fn setup() -> Result<Capturer> {
 }
 
 impl Capturer {
-    pub async fn capture_frame(&mut self) -> Result<Vec<u8>> {
+    pub async fn capture_frame(&mut self) -> Result<(Vec<u8>, u32, u32, u32)> {
         // We need to clone the proxies so we don't hold a borrow on self.state
         // Proxies in wayland-client are cheap to clone (just an ID and a pointer)
         let manager = self.state.screencopy_manager.as_ref().unwrap().clone();
@@ -202,7 +202,7 @@ impl Capturer {
         let size = (self.state.stride * self.state.height) as usize;
         
         let fd = memfd::memfd_create(
-            CStr::from_bytes_with_nul(b"hyperhue-shm\0")?,
+            CStr::from_bytes_with_nul(b"hyprhue-shm\0")?,
             memfd::MemFdCreateFlag::MFD_CLOEXEC,
         )?;
         
@@ -233,12 +233,15 @@ impl Capturer {
         
         // 6. Copy data out
         let data = mmap.to_vec();
+        let width = self.state.width;
+        let height = self.state.height;
+        let stride = self.state.stride;
         
         // Cleanup
         buffer.destroy();
         pool.destroy();
         frame.destroy();
         
-        Ok(data)
+        Ok((data, width, height, stride))
     }
 }

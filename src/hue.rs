@@ -80,7 +80,7 @@ impl Bridge {
         
         for _ in 0..30 {
             let body = serde_json::json!({
-                "devicetype": "hyperhue#linux",
+                "devicetype": "hyprhue#linux",
                 "generateclientkey": true
             });
 
@@ -186,7 +186,7 @@ impl HueStream {
         })
     }
 
-    pub async fn send_colors(&mut self, lights: &[u16], r: u8, g: u8, b: u8) -> Result<()> {
+    pub async fn send_colors(&mut self, lights: &[u16], left_color: (u8, u8, u8), right_color: (u8, u8, u8)) -> Result<()> {
         let mut buffer = Vec::with_capacity(16 + lights.len() * 9);
 
         // Header
@@ -200,7 +200,10 @@ impl HueStream {
         ]);
 
         // Light Data
-        for id in lights {
+        let mid = lights.len() / 2;
+        for (i, id) in lights.iter().enumerate() {
+            let (r, g, b) = if i < mid { left_color } else { right_color };
+            
             buffer.push(0x00); // Type (0 = Light)
             buffer.extend_from_slice(&(*id).to_be_bytes());
             buffer.push(r);

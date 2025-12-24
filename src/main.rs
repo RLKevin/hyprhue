@@ -7,7 +7,7 @@ use std::io::Write;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    println!("Starting HyperHue...");
+    println!("Starting HyprHue...");
 
     // 1. Load or Setup Config
     let config = load_or_setup_config().await?;
@@ -30,15 +30,18 @@ async fn main() -> Result<()> {
     // 4. Main Loop
     println!("Press Ctrl+C to stop.");
     loop {
-        let frame = capturer.capture_frame().await?;
-        let (r, g, b) = processor::calculate_colors(&frame);
+        let (frame, width, height, stride) = capturer.capture_frame().await?;
+        let (left_color, right_color) = processor::calculate_colors(&frame, width, height, stride);
         
+        let (lr, lg, lb) = left_color;
+        let (rr, rg, rb) = right_color;
+
         // Log the color
-        print!("\rCaptured Color: \x1b[48;2;{};{};{}m   \x1b[0m RGB({:3}, {:3}, {:3})", r, g, b, r, g, b);
+        print!("\rLeft: \x1b[48;2;{};{};{}m   \x1b[0m Right: \x1b[48;2;{};{};{}m   \x1b[0m", lr, lg, lb, rr, rg, rb);
         std::io::stdout().flush()?;
         
         // Send to Hue via DTLS
-        if let Err(e) = stream.send_colors(&config.light_ids, r, g, b).await {
+        if let Err(e) = stream.send_colors(&config.light_ids, left_color, right_color).await {
             eprintln!("\nError sending stream: {}", e);
             // Try to reconnect or just break?
             // For now, just log.
@@ -50,7 +53,7 @@ async fn main() -> Result<()> {
 }
 
 async fn load_or_setup_config() -> Result<hue::BridgeConfig> {
-    let config_path = "hyperhue_config.json";
+    let config_path = "hyprhue_config.json";
     
     if let Ok(file) = std::fs::read_to_string(config_path) {
         if let Ok(config) = serde_json::from_str::<hue::BridgeConfig>(&file) {
