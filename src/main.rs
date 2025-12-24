@@ -53,9 +53,14 @@ async fn main() -> Result<()> {
 }
 
 async fn load_or_setup_config() -> Result<hue::BridgeConfig> {
-    let config_path = "hyprhue_config.json";
+    let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+    let config_dir = std::path::Path::new(&home).join(".config/hypr");
+    if !config_dir.exists() {
+        std::fs::create_dir_all(&config_dir)?;
+    }
+    let config_path = config_dir.join("hyprhue.conf");
     
-    if let Ok(file) = std::fs::read_to_string(config_path) {
+    if let Ok(file) = std::fs::read_to_string(&config_path) {
         if let Ok(config) = serde_json::from_str::<hue::BridgeConfig>(&file) {
             // Check if it has the new fields (clientkey)
             if !config.clientkey.is_empty() {
@@ -110,8 +115,8 @@ async fn load_or_setup_config() -> Result<hue::BridgeConfig> {
         light_ids,
     };
 
-    std::fs::write(config_path, serde_json::to_string_pretty(&config)?)?;
-    println!("Config saved to {}", config_path);
+    std::fs::write(&config_path, serde_json::to_string_pretty(&config)?)?;
+    println!("Config saved to {}", config_path.display());
 
     Ok(config)
 }

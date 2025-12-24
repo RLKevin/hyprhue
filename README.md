@@ -43,4 +43,4 @@ You can build a standalone binary so you don't need to use `cargo` every time.
 1.  The app will automatically discover your Hue Bridge.
 2.  When prompted, press the **Link Button** on your Bridge.
 3.  Select the **Entertainment Group** you want to sync with.
-4.  Configuration is saved to `hyprhue_config.json`.
+4.  Configuration is saved to `~/.config/hypr/hyprhue.conf`.
