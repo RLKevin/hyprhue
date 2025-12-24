@@ -10,9 +10,33 @@ A screen-syncing application for Philips Hue lights on Linux (Wayland/Hyprland).
 
 ## How to Run
 
+### Option 1: Run with Cargo (Development)
+
 ```bash
 cargo run
 ```
+
+### Option 2: Build and Run Binary (Recommended)
+
+You can build a standalone binary so you don't need to use `cargo` every time.
+
+1.  **Build the release binary**:
+
+    ```bash
+    cargo build --release
+    ```
+
+2.  **Run the binary**:
+
+    ```bash
+    ./target/release/hyprhue
+    ```
+
+    You can also move this binary to somewhere in your PATH (like `/usr/local/bin`) to run it from anywhere:
+
+    ```bash
+    sudo cp target/release/hyprhue /usr/local/bin/
+    ```
 
 ## First Run Setup
 
