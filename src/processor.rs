@@ -1,12 +1,12 @@
 pub fn calculate_colors(data: &[u8], width: u32, height: u32, stride: u32) -> ((u8, u8, u8), (u8, u8, u8)) {
-    let mut left_r: u64 = 0;
-    let mut left_g: u64 = 0;
-    let mut left_b: u64 = 0;
+    let mut left_r_sq: u64 = 0;
+    let mut left_g_sq: u64 = 0;
+    let mut left_b_sq: u64 = 0;
     let mut left_count: u64 = 0;
 
-    let mut right_r: u64 = 0;
-    let mut right_g: u64 = 0;
-    let mut right_b: u64 = 0;
+    let mut right_r_sq: u64 = 0;
+    let mut right_g_sq: u64 = 0;
+    let mut right_b_sq: u64 = 0;
     let mut right_count: u64 = 0;
 
     let left_boundary = (width as f32 * 0.25) as u32;
@@ -31,14 +31,14 @@ pub fn calculate_colors(data: &[u8], width: u32, height: u32, stride: u32) -> ((
             let r = data[pixel_offset + 2] as u64;
 
             if x < left_boundary {
-                left_r += r;
-                left_g += g;
-                left_b += b;
+                left_r_sq += r * r;
+                left_g_sq += g * g;
+                left_b_sq += b * b;
                 left_count += 1;
             } else if x >= right_boundary {
-                right_r += r;
-                right_g += g;
-                right_b += b;
+                right_r_sq += r * r;
+                right_g_sq += g * g;
+                right_b_sq += b * b;
                 right_count += 1;
             }
         }
@@ -46,9 +46,9 @@ pub fn calculate_colors(data: &[u8], width: u32, height: u32, stride: u32) -> ((
 
     let left_color = if left_count > 0 {
         (
-            (left_r / left_count) as u8,
-            (left_g / left_count) as u8,
-            (left_b / left_count) as u8,
+            (left_r_sq as f64 / left_count as f64).sqrt() as u8,
+            (left_g_sq as f64 / left_count as f64).sqrt() as u8,
+            (left_b_sq as f64 / left_count as f64).sqrt() as u8,
         )
     } else {
         (0, 0, 0)
@@ -56,9 +56,9 @@ pub fn calculate_colors(data: &[u8], width: u32, height: u32, stride: u32) -> ((
 
     let right_color = if right_count > 0 {
         (
-            (right_r / right_count) as u8,
-            (right_g / right_count) as u8,
-            (right_b / right_count) as u8,
+            (right_r_sq as f64 / right_count as f64).sqrt() as u8,
+            (right_g_sq as f64 / right_count as f64).sqrt() as u8,
+            (right_b_sq as f64 / right_count as f64).sqrt() as u8,
         )
     } else {
         (0, 0, 0)

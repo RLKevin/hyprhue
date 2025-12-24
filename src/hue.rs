@@ -16,6 +16,12 @@ pub struct BridgeConfig {
     pub clientkey: String,
     pub group_id: String,
     pub light_ids: Vec<u16>, // V1 Integer IDs for streaming
+    #[serde(default = "default_brightness")]
+    pub brightness: f32,
+}
+
+fn default_brightness() -> f32 {
+    1.0
 }
 
 pub struct Bridge {

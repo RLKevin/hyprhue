@@ -36,6 +36,22 @@ async fn main() -> Result<()> {
         let (lr, lg, lb) = left_color;
         let (rr, rg, rb) = right_color;
 
+        // Apply brightness modifier
+        let b_mod = config.brightness;
+        let left_color = (
+            (lr as f32 * b_mod).min(255.0) as u8,
+            (lg as f32 * b_mod).min(255.0) as u8,
+            (lb as f32 * b_mod).min(255.0) as u8,
+        );
+        let right_color = (
+            (rr as f32 * b_mod).min(255.0) as u8,
+            (rg as f32 * b_mod).min(255.0) as u8,
+            (rb as f32 * b_mod).min(255.0) as u8,
+        );
+        
+        let (lr, lg, lb) = left_color;
+        let (rr, rg, rb) = right_color;
+
         // Log the color
         print!("\rLeft: \x1b[48;2;{};{};{}m   \x1b[0m Right: \x1b[48;2;{};{};{}m   \x1b[0m", lr, lg, lb, rr, rg, rb);
         std::io::stdout().flush()?;
@@ -113,6 +129,7 @@ async fn load_or_setup_config() -> Result<hue::BridgeConfig> {
         clientkey,
         group_id: selected_group.id.clone(),
         light_ids,
+        brightness: 1.0,
     };
 
     std::fs::write(&config_path, serde_json::to_string_pretty(&config)?)?;

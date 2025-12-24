@@ -38,6 +38,12 @@ You can build a standalone binary so you don't need to use `cargo` every time.
     sudo cp target/release/hyprhue /usr/local/bin/
     ```
 
+## Configuration
+
+The configuration is saved to `~/.config/hypr/hyprhue.conf`. You can edit this file to change settings.
+
+-   `brightness`: A multiplier for the brightness of the lights (default: 1.0). Increase this (e.g., 1.5) if the lights are too dim.
+
 ## First Run Setup
 
 1.  The app will automatically discover your Hue Bridge.
