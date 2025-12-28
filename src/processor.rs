@@ -1,13 +1,13 @@
 pub fn calculate_colors(data: &[u8], width: u32, height: u32, stride: u32) -> ((u8, u8, u8), (u8, u8, u8)) {
-    let mut left_r_sq: u64 = 0;
-    let mut left_g_sq: u64 = 0;
-    let mut left_b_sq: u64 = 0;
-    let mut left_count: u64 = 0;
+    let mut left_r_acc: u64 = 0;
+    let mut left_g_acc: u64 = 0;
+    let mut left_b_acc: u64 = 0;
+    let mut left_weight: u64 = 0;
 
-    let mut right_r_sq: u64 = 0;
-    let mut right_g_sq: u64 = 0;
-    let mut right_b_sq: u64 = 0;
-    let mut right_count: u64 = 0;
+    let mut right_r_acc: u64 = 0;
+    let mut right_g_acc: u64 = 0;
+    let mut right_b_acc: u64 = 0;
+    let mut right_weight: u64 = 0;
 
     let left_boundary = (width as f32 * 0.25) as u32;
     let right_boundary = (width as f32 * 0.75) as u32;
@@ -30,35 +30,46 @@ pub fn calculate_colors(data: &[u8], width: u32, height: u32, stride: u32) -> ((
             let g = data[pixel_offset + 1] as u64;
             let r = data[pixel_offset + 2] as u64;
 
+            // Calculate saturation (max - min)
+            let max = r.max(g).max(b);
+            let min = r.min(g).min(b);
+            let saturation = max - min;
+
+            // Weight by brightness AND saturation to prioritize colorful pixels
+            // Squaring the saturation gives it a lot more influence
+            let weight = (r + g + b) + (saturation * saturation);
+            
+            if weight == 0 { continue; }
+
             if x < left_boundary {
-                left_r_sq += r * r;
-                left_g_sq += g * g;
-                left_b_sq += b * b;
-                left_count += 1;
+                left_r_acc += r * r * weight;
+                left_g_acc += g * g * weight;
+                left_b_acc += b * b * weight;
+                left_weight += weight;
             } else if x >= right_boundary {
-                right_r_sq += r * r;
-                right_g_sq += g * g;
-                right_b_sq += b * b;
-                right_count += 1;
+                right_r_acc += r * r * weight;
+                right_g_acc += g * g * weight;
+                right_b_acc += b * b * weight;
+                right_weight += weight;
             }
         }
     }
 
-    let left_color = if left_count > 0 {
+    let left_color = if left_weight > 0 {
         (
-            (left_r_sq as f64 / left_count as f64).sqrt() as u8,
-            (left_g_sq as f64 / left_count as f64).sqrt() as u8,
-            (left_b_sq as f64 / left_count as f64).sqrt() as u8,
+            (left_r_acc as f64 / left_weight as f64).sqrt() as u8,
+            (left_g_acc as f64 / left_weight as f64).sqrt() as u8,
+            (left_b_acc as f64 / left_weight as f64).sqrt() as u8,
         )
     } else {
         (0, 0, 0)
     };
 
-    let right_color = if right_count > 0 {
+    let right_color = if right_weight > 0 {
         (
-            (right_r_sq as f64 / right_count as f64).sqrt() as u8,
-            (right_g_sq as f64 / right_count as f64).sqrt() as u8,
-            (right_b_sq as f64 / right_count as f64).sqrt() as u8,
+            (right_r_acc as f64 / right_weight as f64).sqrt() as u8,
+            (right_g_acc as f64 / right_weight as f64).sqrt() as u8,
+            (right_b_acc as f64 / right_weight as f64).sqrt() as u8,
         )
     } else {
         (0, 0, 0)
