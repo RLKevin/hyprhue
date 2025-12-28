@@ -1,6 +1,6 @@
 # HyprHue
 
-A screen-syncing application for Philips Hue lights on Linux (Wayland/Hyprland).
+A high-performance screen-syncing application for Philips Hue lights on Wayland written in Rust (by the way). Bridge discovery uses `discovery.meethue.com`, but the app works entirely locally after that.
 
 ## Prerequisites
 
