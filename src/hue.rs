@@ -151,15 +151,7 @@ impl Bridge {
         Ok(())
     }
     
-    pub async fn stop_stream(&self) -> Result<()> {
-        let url = format!("https://{}/api/{}/groups/{}", self.config.ip, self.config.username, self.config.group_id);
-        let body = serde_json::json!({
-            "stream": { "active": false }
-        });
-        
-        self.client.put(&url).json(&body).send().await?;
-        Ok(())
-    }
+
 }
 
 pub struct HueStream {

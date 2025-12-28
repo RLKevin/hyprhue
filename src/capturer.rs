@@ -3,7 +3,7 @@ use memmap2::MmapMut;
 use nix::sys::memfd;
 use std::ffi::CStr;
 use std::fs::File;
-use std::os::unix::io::{AsRawFd, FromRawFd, AsFd};
+use std::os::unix::io::AsFd;
 use wayland_client::{
     globals::{registry_queue_init, GlobalListContents},
     protocol::{wl_buffer, wl_output, wl_registry, wl_shm, wl_shm_pool},
