@@ -18,7 +18,7 @@ cargo run
 
 ### Option 2: Build and Run Binary (Recommended)
 
-You can build a standalone binary so you don't need to use `cargo` every time.
+You can build a standalone binary so you don't need to use `cargo` every time. Use the install script or follow the steps below:
 
 1.  **Build the release binary**:
 
