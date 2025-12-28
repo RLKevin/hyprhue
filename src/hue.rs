@@ -177,6 +177,7 @@ impl HueStream {
             psk_identity_hint: Some(psk_identity),
             cipher_suites: vec![CipherSuiteId::Tls_Psk_With_Aes_128_Gcm_Sha256],
             insecure_skip_verify: true,
+            server_name: bridge_ip.to_string(),
             ..Default::default()
         };
 

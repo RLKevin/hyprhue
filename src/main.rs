@@ -3,11 +3,60 @@ mod capturer;
 mod processor;
 
 use anyhow::Result;
-use std::io::Write;
+use simplelog::*;
+use log::{info, error};
+use std::fs::File;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    println!("Starting HyprHue...");
+    // Initialize logging
+    let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+    let log_path = std::path::Path::new(&home).join(".config/hypr/hyprhue.log");
+    if let Some(parent) = log_path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    
+    let _ = CombinedLogger::init(
+        vec![
+            TermLogger::new(LevelFilter::Info, Config::default(), TerminalMode::Mixed, ColorChoice::Auto),
+            WriteLogger::new(LevelFilter::Info, Config::default(), File::create(&log_path).unwrap()),
+        ]
+    );
+
+    // Panic hook to log panics
+    let hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |panic_info| {
+        error!("Panic occurred: {:?}", panic_info);
+        hook(panic_info);
+    }));
+
+    loop {
+        match run().await {
+            Ok(_) => break Ok(()),
+            Err(e) => {
+                let is_conn_refused = e.chain().any(|cause| {
+                    if let Some(io_err) = cause.downcast_ref::<std::io::Error>() {
+                        io_err.kind() == std::io::ErrorKind::ConnectionRefused
+                    } else {
+                        false
+                    }
+                });
+
+                if is_conn_refused {
+                    error!("Connection refused. Retrying in 5 seconds...");
+                    tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+                    continue;
+                }
+
+                error!("Fatal error: {:?}", e);
+                return Err(e);
+            }
+        }
+    }
+}
+
+async fn run() -> Result<()> {
+    info!("Starting HyprHue...");
 
     // 1. Load or Setup Config
     let config = load_or_setup_config().await?;
@@ -17,18 +66,18 @@ async fn main() -> Result<()> {
     let mut capturer = capturer::setup()?;
 
     // 3. Start Stream
-    println!("Activating Entertainment Stream on Bridge...");
+    info!("Activating Entertainment Stream on Bridge...");
     bridge.start_stream().await?;
     
-    println!("Waiting for Bridge to switch modes...");
+    info!("Waiting for Bridge to switch modes...");
     tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
 
-    println!("Connecting to DTLS Stream...");
+    info!("Connecting to DTLS Stream...");
     let mut stream = hue::HueStream::connect(&config.ip, &config.username, &config.clientkey).await?;
-    println!("Stream Connected! Syncing at 50 FPS...");
+    info!("Stream Connected! Syncing at 50 FPS...");
 
     // 4. Main Loop
-    println!("Press Ctrl+C to stop.");
+    info!("Press Ctrl+C to stop.");
     loop {
         let (frame, width, height, stride) = capturer.capture_frame().await?;
         let (left_color, right_color) = processor::calculate_colors(&frame, width, height, stride);
@@ -49,16 +98,13 @@ async fn main() -> Result<()> {
             (rb as f32 * b_mod).min(255.0) as u8,
         );
         
-        let (lr, lg, lb) = left_color;
-        let (rr, rg, rb) = right_color;
-
         // Log the color
-        print!("\rLeft: \x1b[48;2;{};{};{}m   \x1b[0m Right: \x1b[48;2;{};{};{}m   \x1b[0m", lr, lg, lb, rr, rg, rb);
-        std::io::stdout().flush()?;
+        // print!("\rLeft: \x1b[48;2;{};{};{}m   \x1b[0m Right: \x1b[48;2;{};{};{}m   \x1b[0m", lr, lg, lb, rr, rg, rb);
+        // std::io::stdout().flush()?;
         
         // Send to Hue via DTLS
         if let Err(e) = stream.send_colors(&config.light_ids, left_color, right_color).await {
-            eprintln!("\nError sending stream: {}", e);
+            error!("Error sending stream: {}", e);
             // Try to reconnect or just break?
             // For now, just log.
         }
@@ -85,7 +131,7 @@ async fn load_or_setup_config() -> Result<hue::BridgeConfig> {
         }
     }
 
-    println!("No valid config found. Starting setup...");
+    info!("No valid config found. Starting setup...");
     
     println!("Discovering Hue Bridge...");
     let ip = hue::Bridge::discover().await.or_else(|_| {
@@ -133,7 +179,7 @@ async fn load_or_setup_config() -> Result<hue::BridgeConfig> {
     };
 
     std::fs::write(&config_path, serde_json::to_string_pretty(&config)?)?;
-    println!("Config saved to {}", config_path.display());
+    info!("Config saved to {}", config_path.display());
 
     Ok(config)
 }

@@ -1,6 +1,6 @@
 [package]
 name = "hyprhue"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
 
 [dependencies]
@@ -31,3 +31,5 @@ image = "0.24"
 # DTLS for Hue Entertainment API
 dtls = "0.13"
 hex = "0.4"
+log = "0.4.29"
+simplelog = "0.12.2"
