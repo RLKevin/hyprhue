@@ -6,6 +6,7 @@ use anyhow::Result;
 use simplelog::*;
 use log::{info, error};
 use std::fs::File;
+use notify_rust::Notification;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -25,8 +26,13 @@ async fn main() -> Result<()> {
 
     // Panic hook to log panics
     let hook = std::panic::take_hook();
+    let log_path_panic = log_path.clone();
     std::panic::set_hook(Box::new(move |panic_info| {
         error!("Panic occurred: {:?}", panic_info);
+        let _ = Notification::new()
+            .summary("HyprHue Panic")
+            .body(&format!("Application panicked. Check log at: {}", log_path_panic.display()))
+            .show();
         hook(panic_info);
     }));
 
@@ -49,6 +55,12 @@ async fn main() -> Result<()> {
                 }
 
                 error!("Fatal error: {:?}", e);
+
+                let _ = Notification::new()
+                    .summary("HyprHue Error")
+                    .body(&format!("Fatal error occurred. Check log at: {}", log_path.display()))
+                    .show();
+
                 return Err(e);
             }
         }
@@ -75,6 +87,11 @@ async fn run() -> Result<()> {
     info!("Connecting to DTLS Stream...");
     let mut stream = hue::HueStream::connect(&config.ip, &config.username, &config.clientkey).await?;
     info!("Stream Connected! Syncing at 50 FPS...");
+
+    let _ = Notification::new()
+        .summary("HyprHue")
+        .body("Light syncing enabled")
+        .show();
 
     // 4. Main Loop
     info!("Press Ctrl+C to stop.");

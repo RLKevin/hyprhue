@@ -1,6 +1,6 @@
 [package]
 name = "hyprhue"
-version = "0.5.1"
+version = "0.5.2"
 edition = "2021"
 
 [dependencies]
@@ -33,3 +33,4 @@ dtls = "0.13"
 hex = "0.4"
 log = "0.4.29"
 simplelog = "0.12.2"
+notify-rust = "4.11.7"
