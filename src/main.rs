@@ -54,6 +54,17 @@ async fn main() -> Result<()> {
                     continue;
                 }
 
+                let err_string = e.to_string();
+                if err_string.contains("unauthorized user") || (err_string.contains("resource") && err_string.contains("not available")) {
+                    error!("Authentication failed or Group missing. Resetting configuration and restarting setup...");
+                    let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+                    let config_path = std::path::Path::new(&home).join(".config/hypr/hyprhue.conf");
+                    if let Err(del_err) = std::fs::remove_file(&config_path) {
+                        error!("Failed to delete config file: {}", del_err);
+                    }
+                    continue;
+                }
+
                 error!("Fatal error: {:?}", e);
 
                 let _ = Notification::new()
