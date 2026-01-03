@@ -4,6 +4,9 @@ set -e
 echo "Building release binary..."
 cargo build --release
 
+echo "Stopping any running instances..."
+killall hyprhue || true
+
 echo "Installing binary to /usr/local/bin/..."
 sudo cp target/release/hyprhue /usr/local/bin/
 
