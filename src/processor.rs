@@ -9,8 +9,8 @@ pub fn calculate_colors(data: &[u8], width: u32, height: u32, stride: u32) -> ((
     let mut right_b_acc: u64 = 0;
     let mut right_weight: u64 = 0;
 
-    let left_boundary = (width as f32 * 0.25) as u32;
-    let right_boundary = (width as f32 * 0.75) as u32;
+    let left_boundary = (width as f32 * 0.20) as u32;
+    let right_boundary = (width as f32 * 0.80) as u32;
 
     // Iterate over rows with a step for performance
     for y in (0..height).step_by(10) {
@@ -36,8 +36,7 @@ pub fn calculate_colors(data: &[u8], width: u32, height: u32, stride: u32) -> ((
             let saturation = max - min;
 
             // Weight by brightness AND saturation to prioritize colorful pixels
-            // Squaring the saturation gives it a lot more influence
-            let weight = (r + g + b) + (saturation * saturation);
+            let weight = (r + g + b) + (saturation);
             
             if weight == 0 { continue; }
 
