@@ -33,10 +33,9 @@ pub fn calculate_colors(data: &[u8], width: u32, height: u32, stride: u32) -> ((
             // Calculate saturation (max - min)
             let max = r.max(g).max(b);
             let min = r.min(g).min(b);
-            let saturation = max - min;
+            let _saturation = max - min;
 
-            // Weight by brightness AND saturation to prioritize colorful pixels
-            let weight = (r + g + b) + (saturation);
+            let weight = 1;
             
             if weight == 0 { continue; }
 

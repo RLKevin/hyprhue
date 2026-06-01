@@ -5,33 +5,46 @@ mod processor;
 use anyhow::Result;
 use simplelog::*;
 use log::{info, error};
-use std::fs::File;
 use notify_rust::Notification;
+
+fn is_network_not_ready_error(e: &anyhow::Error) -> bool {
+    let has_unreachable_io = e.chain().any(|cause| {
+        if let Some(io_err) = cause.downcast_ref::<std::io::Error>() {
+            matches!(
+                io_err.kind(),
+                std::io::ErrorKind::NetworkUnreachable
+                    | std::io::ErrorKind::HostUnreachable
+                    | std::io::ErrorKind::AddrNotAvailable
+                    | std::io::ErrorKind::NotConnected
+            )
+        } else {
+            false
+        }
+    });
+
+    if has_unreachable_io {
+        return true;
+    }
+
+    // Fallback for wrapped transport errors that do not preserve io::ErrorKind.
+    let msg = format!("{:#}", e).to_lowercase();
+    msg.contains("network is unreachable")
+        || msg.contains("no route to host")
+        || msg.contains("host is unreachable")
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
     // Initialize logging
-    let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-    let log_path = std::path::Path::new(&home).join(".config/hypr/hyprhue.log");
-    if let Some(parent) = log_path.parent() {
-        let _ = std::fs::create_dir_all(parent);
-    }
-    
-    let _ = CombinedLogger::init(
-        vec![
-            TermLogger::new(LevelFilter::Info, Config::default(), TerminalMode::Mixed, ColorChoice::Auto),
-            WriteLogger::new(LevelFilter::Info, Config::default(), File::create(&log_path).unwrap()),
-        ]
-    );
+    let _ = TermLogger::init(LevelFilter::Info, Config::default(), TerminalMode::Mixed, ColorChoice::Auto);
 
     // Panic hook to log panics
     let hook = std::panic::take_hook();
-    let log_path_panic = log_path.clone();
     std::panic::set_hook(Box::new(move |panic_info| {
         error!("Panic occurred: {:?}", panic_info);
         let _ = Notification::new()
             .summary("HyprHue Panic")
-            .body(&format!("Application panicked. Check log at: {}", log_path_panic.display()))
+            .body("Application panicked.")
             .show();
         hook(panic_info);
     }));
@@ -40,6 +53,12 @@ async fn main() -> Result<()> {
         match run().await {
             Ok(_) => break Ok(()),
             Err(e) => {
+                if is_network_not_ready_error(&e) {
+                    error!("Network is not ready yet. Retrying in 2 seconds...");
+                    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+                    continue;
+                }
+
                 let is_conn_refused = e.chain().any(|cause| {
                     if let Some(io_err) = cause.downcast_ref::<std::io::Error>() {
                         io_err.kind() == std::io::ErrorKind::ConnectionRefused
@@ -69,7 +88,7 @@ async fn main() -> Result<()> {
 
                 let _ = Notification::new()
                     .summary("HyprHue Error")
-                    .body(&format!("Fatal error occurred. Check log at: {}", log_path.display()))
+                    .body(&format!("Fatal error: {}", e))
                     .show();
 
                 return Err(e);

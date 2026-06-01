@@ -1165,7 +1165,7 @@ dependencies = [
 
 [[package]]
 name = "hyprhue"
-version = "0.5.3"
+version = "0.5.4"
 dependencies = [
  "anyhow",
  "dtls",
